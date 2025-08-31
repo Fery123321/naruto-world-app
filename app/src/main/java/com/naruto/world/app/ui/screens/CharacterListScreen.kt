@@ -31,18 +31,39 @@ fun CharacterListScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Characters",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+        // Header with Naruto theme
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "👥",
+                    style = MaterialTheme.typography.displayMedium
+                )
+                Text(
+                    text = "Ninja Characters",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "Meet the heroes and villains of the Naruto world",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
 
         // Search Bar
         SearchBar(
             query = searchQuery,
             onQueryChange = { viewModel.searchCharacters(it) },
             onClearQuery = { viewModel.clearSearch() },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
 
         when (state) {
@@ -140,7 +161,11 @@ private fun CharacterItem(
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 8.dp
+        )
     ) {
         Row(
             modifier = Modifier
@@ -148,14 +173,20 @@ private fun CharacterItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Character Image
-            AsyncImage(
-                model = character.images?.firstOrNull(),
-                contentDescription = "${character.name} image",
+            // Character Image with placeholder
+            Surface(
                 modifier = Modifier
-                    .size(60.dp)
-                    .padding(end = 16.dp)
-            )
+                    .size(64.dp)
+                    .padding(end = 16.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                AsyncImage(
+                    model = character.images?.firstOrNull(),
+                    contentDescription = "${character.name} image",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             // Character Info
             Column(
@@ -163,33 +194,69 @@ private fun CharacterItem(
             ) {
                 Text(
                     text = character.name,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Character details in a more organized way
+                val details = mutableListOf<String>()
+
                 character.personal?.clan?.let { clan ->
-                    Text(
-                        text = "Clan: $clan",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    details.add("🏠 $clan")
                 }
 
                 character.personal?.affiliation?.firstOrNull()?.let { affiliation ->
-                    Text(
-                        text = "Affiliation: $affiliation",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    details.add("🏛️ $affiliation")
                 }
 
                 character.rank?.ninjaRank?.get("Part I")?.let { rank ->
+                    details.add("⭐ $rank")
+                }
+
+                if (details.isNotEmpty()) {
                     Text(
-                        text = "Rank: $rank",
+                        text = details.joinToString(" • "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
                     )
                 }
+
+                // Status indicator
+                character.personal?.status?.let { status ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        color = when (status.lowercase()) {
+                            "alive" -> MaterialTheme.colorScheme.primaryContainer
+                            "deceased" -> MaterialTheme.colorScheme.errorContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = status,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = when (status.lowercase()) {
+                                "alive" -> MaterialTheme.colorScheme.onPrimaryContainer
+                                "deceased" -> MaterialTheme.colorScheme.onErrorContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
+
+            // Navigation indicator
+            Text(
+                text = "→",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

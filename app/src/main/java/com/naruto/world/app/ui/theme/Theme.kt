@@ -12,25 +12,67 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = NarutoOrange,
+    onPrimary = InkBlack,
+    primaryContainer = NarutoOrangeDark,
+    onPrimaryContainer = PaperWhite,
+
+    secondary = NinjaBlue,
+    onSecondary = PaperWhite,
+    secondaryContainer = NinjaBlueDark,
+    onSecondaryContainer = PaperWhite,
+
+    tertiary = ChakraRed,
+    onTertiary = PaperWhite,
+    tertiaryContainer = ChakraRedDark,
+    onTertiaryContainer = PaperWhite,
+
+    error = ErrorRed,
+    onError = PaperWhite,
+    errorContainer = ChakraRedDark,
+    onErrorContainer = PaperWhite,
+
+    background = SurfaceDark,
+    onBackground = PaperWhite,
+    surface = CardBackgroundDark,
+    onSurface = PaperWhite,
+    surfaceVariant = ScrollGrayDark,
+    onSurfaceVariant = ScrollGrayLight,
+
+    outline = ScrollGray,
+    outlineVariant = ScrollGrayDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = NarutoOrange,
+    onPrimary = PaperWhite,
+    primaryContainer = NarutoOrangeLight,
+    onPrimaryContainer = InkBlack,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = NinjaBlue,
+    onSecondary = PaperWhite,
+    secondaryContainer = NinjaBlueLight,
+    onSecondaryContainer = InkBlack,
+
+    tertiary = ChakraRed,
+    onTertiary = PaperWhite,
+    tertiaryContainer = ChakraRedLight,
+    onTertiaryContainer = InkBlack,
+
+    error = ErrorRed,
+    onError = PaperWhite,
+    errorContainer = ChakraRedLight,
+    onErrorContainer = InkBlack,
+
+    background = SurfaceLight,
+    onBackground = InkBlack,
+    surface = CardBackground,
+    onSurface = InkBlack,
+    surfaceVariant = ScrollGrayLight,
+    onSurfaceVariant = ScrollGrayDark,
+
+    outline = ScrollGray,
+    outlineVariant = ScrollGrayLight
 )
 
 @Composable
