@@ -60,7 +60,7 @@ class NarutoApiServiceTest {
     }
 
     @Test
-    fun `getCharacters should return valid response`() = runBlocking {
+    fun `getCharacters_should_return_valid_response`() = runBlocking {
         // When
         val response = apiService.getCharacters(page = 1, limit = 10)
 
@@ -81,7 +81,7 @@ class NarutoApiServiceTest {
     }
 
     @Test
-    fun `getCharacters with search should return filtered results`() = runBlocking {
+    fun `getCharacters_with_search_should_return_filtered_results`() = runBlocking {
         // Given
         val searchName = "Naruto"
 
@@ -104,7 +104,7 @@ class NarutoApiServiceTest {
     }
 
     @Test
-    fun `getCharacterById should return single character`() = runBlocking {
+    fun `getCharacterById_should_return_single_character`() = runBlocking {
         // Given - Use ID 1 (Naruto) which should exist
         val characterId = 1L
 
@@ -124,7 +124,7 @@ class NarutoApiServiceTest {
     }
 
     @Test
-    fun `getClans should return valid response`() = runBlocking {
+    fun `getClans_should_return_valid_response`() = runBlocking {
         // When
         val response = apiService.getClans(page = 1, limit = 5)
 
@@ -138,7 +138,7 @@ class NarutoApiServiceTest {
     }
 
     @Test
-    fun `getVillages should return valid response`() = runBlocking {
+    fun `getVillages_should_return_valid_response`() = runBlocking {
         // When
         val response = apiService.getVillages(page = 1, limit = 5)
 
