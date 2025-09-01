@@ -42,9 +42,17 @@ A beautifully designed Android application that brings the world of Naruto to yo
 - **Clean Architecture** with MVVM pattern
 - **Dependency Injection** using Koin
 - **Reactive programming** with Kotlin Flow
+- **Offline Caching** with Room database
+- **Cache-first strategy** for optimal performance
 - **Comprehensive testing** suite
-- **Offline-first** approach
 - **Performance optimized**
+
+#### 💾 **Offline Caching Features**
+- **Local Database**: Room persistence for offline access
+- **Smart Caching**: Cache-first strategy with background sync
+- **Search Offline**: Local search functionality
+- **Data Persistence**: Survives app restarts and network issues
+- **Automatic Sync**: Updates cache when network is available
 
 ## 🚀 Getting Started
 

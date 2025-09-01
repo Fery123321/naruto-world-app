@@ -1,6 +1,8 @@
 package com.naruto.world.app.data.repository
 
 import com.naruto.world.app.data.api.NarutoApiService
+import com.naruto.world.app.data.local.datasource.CharacterLocalDataSource
+import com.naruto.world.app.data.mapper.CharacterMapper
 import com.naruto.world.app.data.model.Character
 import com.naruto.world.app.data.model.CharacterResponse
 import kotlinx.coroutines.flow.Flow
@@ -12,17 +14,48 @@ import retrofit2.Response
 class CharacterRepository : KoinComponent {
 
     private val apiService: NarutoApiService by inject()
+    private val localDataSource: CharacterLocalDataSource by inject()
 
     fun getCharacters(page: Int? = null, limit: Int? = null, name: String? = null): Flow<Result<CharacterResponse>> = flow {
         try {
-            val response = apiService.getCharacters(page, limit, name)
-            if (response.isSuccessful) {
-                response.body()?.let { characterResponse ->
-                    emit(Result.success(characterResponse))
-                } ?: emit(Result.failure(Exception("Empty response")))
-            } else {
-                emit(Result.failure(Exception("API Error: ${response.code()} ${response.message()}")))
+            // First try to get from local cache
+            val characterCount = localDataSource.getCharacterCount()
+
+            if (characterCount > 0) {
+                // Return cached data first
+                val cachedCharacters = localDataSource.getAllCharacters()
+                cachedCharacters.collect { entities ->
+                    val characters = CharacterMapper.toModelList(entities)
+                    val cachedResponse = CharacterResponse(
+                        characters = characters,
+                        currentPage = page ?: 1,
+                        pageSize = limit ?: characters.size,
+                        total = characters.size
+                    )
+                    emit(Result.success(cachedResponse))
+                }
             }
+
+            // Then try to fetch from API to update cache
+            try {
+                val response = apiService.getCharacters(page, limit, name)
+                if (response.isSuccessful) {
+                    response.body()?.let { characterResponse ->
+                        // Cache the new data
+                        val entities = CharacterMapper.toEntityList(characterResponse.characters)
+                        localDataSource.insertCharacters(entities)
+
+                        // Emit the fresh data
+                        emit(Result.success(characterResponse))
+                    }
+                }
+            } catch (apiException: Exception) {
+                // If API fails but we have cache, don't emit error
+                if (characterCount == 0) {
+                    emit(Result.failure(apiException))
+                }
+            }
+
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
@@ -30,16 +63,75 @@ class CharacterRepository : KoinComponent {
 
     fun getCharacterById(id: Long): Flow<Result<Character>> = flow {
         try {
-            val response = apiService.getCharacterById(id)
-            if (response.isSuccessful) {
-                response.body()?.let { character ->
-                    emit(Result.success(character))
-                } ?: emit(Result.failure(Exception("Character not found")))
-            } else {
-                emit(Result.failure(Exception("API Error: ${response.code()} ${response.message()}")))
+            // First try to get from local cache
+            val cachedCharacter = localDataSource.getCharacterById(id)
+            if (cachedCharacter != null) {
+                val character = CharacterMapper.toModel(cachedCharacter)
+                emit(Result.success(character))
             }
+
+            // Then try to fetch from API to update cache
+            try {
+                val response = apiService.getCharacterById(id)
+                if (response.isSuccessful) {
+                    response.body()?.let { character ->
+                        // Cache the new data
+                        val entity = CharacterMapper.toEntity(character)
+                        localDataSource.insertCharacter(entity)
+
+                        // Emit the fresh data
+                        emit(Result.success(character))
+                    }
+                }
+            } catch (apiException: Exception) {
+                // If API fails but we have cache, don't emit error
+                if (cachedCharacter == null) {
+                    emit(Result.failure(apiException))
+                }
+            }
+
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
+    }
+
+    fun searchCharacters(query: String): Flow<Result<List<Character>>> = flow {
+        try {
+            // Search in local cache first
+            val cachedResults = localDataSource.searchCharacters(query)
+            cachedResults.collect { entities ->
+                val characters = CharacterMapper.toModelList(entities)
+                emit(Result.success(characters))
+            }
+
+            // Try to search via API if needed
+            try {
+                val response = apiService.getCharacters(name = query)
+                if (response.isSuccessful) {
+                    response.body()?.let { characterResponse ->
+                        // Cache the search results
+                        val entities = CharacterMapper.toEntityList(characterResponse.characters)
+                        localDataSource.insertCharacters(entities)
+
+                        // Emit the fresh search results
+                        emit(Result.success(characterResponse.characters))
+                    }
+                }
+            } catch (apiException: Exception) {
+                // API search failed, but we already emitted cached results
+                // Don't emit error to avoid disrupting the user experience
+            }
+
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun clearCache() {
+        localDataSource.deleteAllCharacters()
+    }
+
+    suspend fun getCacheSize(): Int {
+        return localDataSource.getCharacterCount()
     }
 }

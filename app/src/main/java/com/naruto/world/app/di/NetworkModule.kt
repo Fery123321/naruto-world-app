@@ -1,6 +1,9 @@
 package com.naruto.world.app.di
 
+import androidx.room.Room
 import com.naruto.world.app.data.api.NarutoApiService
+import com.naruto.world.app.data.local.database.NarutoDatabase
+import com.naruto.world.app.data.local.datasource.CharacterLocalDataSource
 import com.naruto.world.app.data.repository.CharacterRepository
 import com.naruto.world.app.viewmodel.CharacterDetailViewModel
 import com.naruto.world.app.viewmodel.CharacterListViewModel
@@ -12,6 +15,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -93,6 +97,23 @@ val networkModule = module {
     single {
         get<Retrofit>().create(NarutoApiService::class.java)
     }
+
+    // Database
+    single {
+        Room.databaseBuilder(
+            androidContext(),
+            NarutoDatabase::class.java,
+            NarutoDatabase.DATABASE_NAME
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    // DAOs
+    single { get<NarutoDatabase>().characterDao() }
+
+    // Data Sources
+    single { CharacterLocalDataSource(get()) }
 
     // Repositories
     single { CharacterRepository() }

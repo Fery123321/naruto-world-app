@@ -105,6 +105,9 @@ dependencies {
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
 
+    // Additional Room dependencies for better functionality
+    implementation("androidx.room:room-paging:2.7.0")
+
     // Image Loading
     implementation(libs.coil.compose)
 
