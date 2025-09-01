@@ -9,6 +9,8 @@ import com.naruto.world.app.ui.screens.CharacterListScreen
 import com.naruto.world.app.ui.screens.ClanDetailScreen
 import com.naruto.world.app.ui.screens.ClanListScreen
 import com.naruto.world.app.ui.screens.HomeScreen
+import com.naruto.world.app.ui.screens.VillageDetailScreen
+import com.naruto.world.app.ui.screens.VillageListScreen
 
 @Composable
 fun NarutoNavGraph() {
@@ -45,7 +47,7 @@ fun NarutoNavGraph() {
         }
 
         composable(Screen.Villages.route) {
-            // TODO: Villages screen
+            VillageListScreen(navController = navController)
         }
 
         composable(
@@ -67,6 +69,17 @@ fun NarutoNavGraph() {
             ClanDetailScreen(
                 navController = navController,
                 clanId = clanId
+            )
+        }
+
+        composable(
+            route = Screen.VillageDetail.route,
+            arguments = Screen.VillageDetail.arguments
+        ) { navBackStackEntry ->
+            val villageId = navBackStackEntry.arguments?.getLong("id") ?: 0L
+            VillageDetailScreen(
+                navController = navController,
+                villageId = villageId
             )
         }
     }
