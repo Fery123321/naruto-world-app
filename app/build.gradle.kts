@@ -114,6 +114,9 @@ dependencies {
     // Navigation
     implementation(libs.navigation.compose)
 
+    // Work Manager
+    implementation(libs.work.runtime)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

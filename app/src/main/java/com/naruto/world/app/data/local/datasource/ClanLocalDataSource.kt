@@ -38,6 +38,14 @@ class ClanLocalDataSource(private val clanDao: ClanDao) {
         return clanDao.getAllClans()
     }
 
+    fun getClansPaged(limit: Int, offset: Int): Flow<List<ClanEntity>> {
+        return clanDao.getClansPaged(limit, offset)
+    }
+
+    suspend fun getSearchResultCount(query: String): Int {
+        return clanDao.getSearchResultCount(query)
+    }
+
     fun searchClans(query: String): Flow<List<ClanEntity>> {
         return clanDao.searchClans(query)
     }

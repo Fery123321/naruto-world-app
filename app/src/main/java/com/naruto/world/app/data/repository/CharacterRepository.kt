@@ -134,4 +134,43 @@ class CharacterRepository : KoinComponent {
     suspend fun getCacheSize(): Int {
         return localDataSource.getCharacterCount()
     }
+
+    suspend fun optimizeCache() {
+        try {
+            // Remove stale data older than 7 days
+            val sevenDaysAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
+            localDataSource.deleteStaleCharacters(sevenDaysAgo)
+
+            // Keep only recent 100 characters for performance
+            val characterCount = localDataSource.getCharacterCount()
+            if (characterCount > MAX_CACHE_SIZE) {
+                // This would require additional DAO methods for more complex cleanup
+                // For now, we'll just clear all and reload popular ones
+                localDataSource.deleteAllCharacters()
+                preloadPopularCharacters()
+            }
+        } catch (e: Exception) {
+            // Silent failure for cache optimization
+        }
+    }
+
+    suspend fun preloadPopularCharacters() {
+        try {
+            // Preload first page of characters for instant access
+            val response = apiService.getCharacters(page = 1, limit = PRELOAD_SIZE)
+            if (response.isSuccessful) {
+                response.body()?.let { characterResponse ->
+                    val entities = CharacterMapper.toEntityList(characterResponse.characters)
+                    localDataSource.insertCharacters(entities)
+                }
+            }
+        } catch (e: Exception) {
+            // Silent failure for preloading
+        }
+    }
+
+    companion object {
+        const val PRELOAD_SIZE = 50
+        const val MAX_CACHE_SIZE = 200
+    }
 }

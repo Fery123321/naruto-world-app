@@ -28,18 +28,33 @@ class ClanListViewModel : ViewModel(), KoinComponent {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _currentPage = MutableStateFlow(0)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    private val _hasMorePages = MutableStateFlow(true)
+    val hasMorePages: StateFlow<Boolean> = _hasMorePages.asStateFlow()
+
+    private var allClans = mutableListOf<Clan>()
+
     init {
-        loadClans()
+        loadInitialClans()
+        preloadData()
     }
 
-    fun loadClans(page: Int? = null, limit: Int? = null) {
+    private fun loadInitialClans() {
         viewModelScope.launch {
             _clanListState.value = ClanListState.Loading
 
-            clanRepository.getClans(page, limit).collect { result ->
+            clanRepository.getClansPaged(0, PAGE_SIZE).collect { result ->
                 result.fold(
                     onSuccess = { clanResponse ->
-                        _clanListState.value = ClanListState.Success(clanResponse.clans)
+                        allClans.clear()
+                        allClans.addAll(clanResponse.clans)
+                        _clanListState.value = ClanListState.Success(allClans.toList())
+                        _hasMorePages.value = clanResponse.clans.size >= PAGE_SIZE
                     },
                     onFailure = { exception ->
                         _clanListState.value = ClanListState.Error(
@@ -51,38 +66,103 @@ class ClanListViewModel : ViewModel(), KoinComponent {
         }
     }
 
+    fun loadMoreClans() {
+        if (_isLoadingMore.value || !_hasMorePages.value) return
+
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            val nextPage = _currentPage.value + 1
+
+            clanRepository.getClansPaged(nextPage, PAGE_SIZE).collect { result ->
+                result.fold(
+                    onSuccess = { clanResponse ->
+                        if (clanResponse.clans.isNotEmpty()) {
+                            allClans.addAll(clanResponse.clans)
+                            _clanListState.value = ClanListState.Success(allClans.toList())
+                            _currentPage.value = nextPage
+                            _hasMorePages.value = clanResponse.clans.size >= PAGE_SIZE
+                        } else {
+                            _hasMorePages.value = false
+                        }
+                    },
+                    onFailure = { exception ->
+                        // Don't show error for pagination failures, just stop loading more
+                        _hasMorePages.value = false
+                    }
+                )
+                _isLoadingMore.value = false
+            }
+        }
+    }
+
+    private fun preloadData() {
+        viewModelScope.launch {
+            // Preload popular clans in background
+            clanRepository.preloadPopularClans()
+
+            // Optimize cache periodically
+            clanRepository.optimizeCache()
+        }
+    }
+
     fun searchClans(query: String) {
         _searchQuery.value = query
 
         if (query.isBlank()) {
-            loadClans()
+            // Return to paginated view
+            _clanListState.value = ClanListState.Success(allClans.toList())
             return
         }
 
+        // Debounce search to avoid too many API calls
         viewModelScope.launch {
-            _clanListState.value = ClanListState.Loading
+            kotlinx.coroutines.delay(SEARCH_DEBOUNCE_MS)
 
-            clanRepository.searchClans(query).collect { result ->
-                result.fold(
-                    onSuccess = { clans ->
-                        _clanListState.value = ClanListState.Success(clans)
-                    },
-                    onFailure = { exception ->
-                        _clanListState.value = ClanListState.Error(
-                            exception.message ?: "Failed to search clans"
-                        )
-                    }
-                )
+            if (_searchQuery.value == query) { // Check if search query hasn't changed
+                _clanListState.value = ClanListState.Loading
+
+                clanRepository.searchClans(query).collect { result ->
+                    result.fold(
+                        onSuccess = { clans ->
+                            _clanListState.value = ClanListState.Success(clans)
+                        },
+                        onFailure = { exception ->
+                            _clanListState.value = ClanListState.Error(
+                                exception.message ?: "Failed to search clans"
+                            )
+                        }
+                    )
+                }
             }
         }
     }
 
     fun refreshClans() {
-        loadClans()
+        viewModelScope.launch {
+            _clanListState.value = ClanListState.Loading
+            _currentPage.value = 0
+            _hasMorePages.value = true
+            allClans.clear()
+
+            loadInitialClans()
+        }
     }
 
     fun clearSearch() {
         _searchQuery.value = ""
-        loadClans()
+        _clanListState.value = ClanListState.Success(allClans.toList())
+    }
+
+    fun shouldLoadMoreClans(lastVisibleItemIndex: Int): Boolean {
+        return lastVisibleItemIndex >= allClans.size - LOAD_MORE_THRESHOLD &&
+               _hasMorePages.value &&
+               !_isLoadingMore.value &&
+               _searchQuery.value.isBlank()
+    }
+
+    companion object {
+        const val PAGE_SIZE = 20
+        const val LOAD_MORE_THRESHOLD = 5
+        const val SEARCH_DEBOUNCE_MS = 300L
     }
 }

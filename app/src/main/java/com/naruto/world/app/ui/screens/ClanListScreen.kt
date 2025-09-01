@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -38,6 +40,9 @@ fun ClanListScreen(
 ) {
     val clanListState by viewModel.clanListState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val hasMorePages by viewModel.hasMorePages.collectAsState()
+    val listState = rememberLazyListState()
 
     Scaffold(
         topBar = {
@@ -91,7 +96,12 @@ fun ClanListScreen(
                             clans = state.clans,
                             onClanClick = { clan ->
                                 navController.navigate(Screen.ClanDetail.createRoute(clan.id))
-                            }
+                            },
+                            onLoadMore = { viewModel.loadMoreClans() },
+                            isLoadingMore = isLoadingMore,
+                            hasMorePages = hasMorePages,
+                            listState = listState,
+                            viewModel = viewModel
                         )
                     }
                 }
@@ -109,9 +119,15 @@ fun ClanListScreen(
 @Composable
 private fun ClanList(
     clans: List<Clan>,
-    onClanClick: (Clan) -> Unit
+    onClanClick: (Clan) -> Unit,
+    onLoadMore: () -> Unit,
+    isLoadingMore: Boolean,
+    hasMorePages: Boolean,
+    listState: LazyListState,
+    viewModel: ClanListViewModel
 ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -122,6 +138,40 @@ private fun ClanList(
                 onClick = { onClanClick(clan) }
             )
         }
+
+        // Load more indicator
+        if (hasMorePages && clans.isNotEmpty()) {
+            item {
+                if (isLoadingMore) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Color(0xFFFF6B35)
+                        )
+                    }
+                } else {
+                    // Invisible item to trigger load more when approaching end
+                    Spacer(modifier = Modifier.height(1.dp))
+                }
+            }
+        }
+    }
+
+    // Trigger load more when user scrolls near the end
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleItemIndex: Int? ->
+                lastVisibleItemIndex?.let {
+                    if (viewModel.shouldLoadMoreClans(it)) {
+                        viewModel.loadMoreClans()
+                    }
+                }
+            }
     }
 }
 

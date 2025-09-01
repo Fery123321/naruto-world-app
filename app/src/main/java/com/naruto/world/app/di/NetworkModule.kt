@@ -17,6 +17,7 @@ import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
@@ -62,7 +63,12 @@ val networkModule = module {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
+        // HTTP Response Cache for performance optimization
+        val cacheSize = 10 * 1024 * 1024L // 10 MB cache
+        val cache = Cache(androidContext().cacheDir, cacheSize)
+
         OkHttpClient.Builder()
+            .cache(cache)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .addHeader("Accept", "application/json")
@@ -70,6 +76,13 @@ val networkModule = module {
                     .addHeader("User-Agent", "NarutoWorldApp/1.0")
                     .build()
                 chain.proceed(request)
+            }
+            .addNetworkInterceptor { chain ->
+                // Add cache control headers for better caching
+                val response = chain.proceed(chain.request())
+                response.newBuilder()
+                    .header("Cache-Control", "public, max-age=300") // 5 minutes cache
+                    .build()
             }
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)

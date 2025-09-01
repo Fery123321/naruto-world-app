@@ -30,6 +30,12 @@ interface ClanDao {
 
     @Query("SELECT * FROM clans ORDER BY name ASC")
     fun getAllClans(): Flow<List<ClanEntity>>
+    
+    @Query("SELECT * FROM clans ORDER BY name ASC LIMIT :limit OFFSET :offset")
+    fun getClansPaged(limit: Int, offset: Int): Flow<List<ClanEntity>>
+    
+    @Query("SELECT COUNT(*) FROM clans WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun getSearchResultCount(query: String): Int
 
     @Query("SELECT * FROM clans WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
     fun searchClans(query: String): Flow<List<ClanEntity>>
