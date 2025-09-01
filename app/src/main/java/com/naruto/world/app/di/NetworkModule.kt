@@ -4,9 +4,13 @@ import androidx.room.Room
 import com.naruto.world.app.data.api.NarutoApiService
 import com.naruto.world.app.data.local.database.NarutoDatabase
 import com.naruto.world.app.data.local.datasource.CharacterLocalDataSource
+import com.naruto.world.app.data.local.datasource.ClanLocalDataSource
 import com.naruto.world.app.data.repository.CharacterRepository
+import com.naruto.world.app.data.repository.ClanRepository
 import com.naruto.world.app.viewmodel.CharacterDetailViewModel
 import com.naruto.world.app.viewmodel.CharacterListViewModel
+import com.naruto.world.app.viewmodel.ClanDetailViewModel
+import com.naruto.world.app.viewmodel.ClanListViewModel
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
@@ -111,14 +115,19 @@ val networkModule = module {
 
     // DAOs
     single { get<NarutoDatabase>().characterDao() }
+    single { get<NarutoDatabase>().clanDao() }
 
     // Data Sources
     single { CharacterLocalDataSource(get()) }
+    single { ClanLocalDataSource(get()) }
 
     // Repositories
     single { CharacterRepository() }
+    single { ClanRepository() }
 
     // ViewModels
     viewModel { CharacterListViewModel() }
     viewModel { (characterId: Long) -> CharacterDetailViewModel(characterId) }
+    viewModel { ClanListViewModel() }
+    viewModel { (clanId: Long) -> ClanDetailViewModel(clanId) }
 }

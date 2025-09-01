@@ -6,10 +6,12 @@ import androidx.room.TypeConverters
 import com.naruto.world.app.data.local.converter.StringListConverter
 import com.naruto.world.app.data.local.converter.StringMapConverter
 import com.naruto.world.app.data.local.dao.CharacterDao
+import com.naruto.world.app.data.local.dao.ClanDao
 import com.naruto.world.app.data.local.entity.CharacterEntity
+import com.naruto.world.app.data.local.entity.ClanEntity
 
 @Database(
-    entities = [CharacterEntity::class],
+    entities = [CharacterEntity::class, ClanEntity::class],
     version = 1,
     exportSchema = true
 )
@@ -17,6 +19,8 @@ import com.naruto.world.app.data.local.entity.CharacterEntity
 abstract class NarutoDatabase : RoomDatabase() {
 
     abstract fun characterDao(): CharacterDao
+
+    abstract fun clanDao(): ClanDao
 
     companion object {
         const val DATABASE_NAME = "naruto_database"
